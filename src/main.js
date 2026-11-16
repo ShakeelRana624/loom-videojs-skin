@@ -1,0 +1,55 @@
+import '@videojs/html/video/player';
+import '@videojs/html/ui/container';
+import '@videojs/html/ui/controls';
+import '@videojs/html/ui/controls-content';
+import '@videojs/html/ui/controls-group';
+import '@videojs/html/ui/play-button';
+import '@videojs/html/ui/seek-button';
+import '@videojs/html/ui/time-slider';
+import '@videojs/html/ui/volume-slider';
+import '@videojs/html/ui/slider-track';
+import '@videojs/html/ui/slider-buffer';
+import '@videojs/html/ui/slider-fill';
+import '@videojs/html/ui/slider-thumb';
+import '@videojs/html/ui/time';
+import '@videojs/html/ui/mute-button';
+import '@videojs/html/ui/fullscreen-button';
+import '@videojs/html/ui/playback-rate-button';
+import '@videojs/html/ui/hotkey';
+import '@videojs/html/ui/status-announcer';
+import '@videojs/html/ui/error-dialog';
+import '@videojs/html/ui/dialog-popup';
+import '@videojs/html/ui/dialog-title';
+import '@videojs/html/ui/dialog-description';
+import '@videojs/html/ui/dialog-close';
+
+const video = document.querySelector('video');
+const skin = document.querySelector('.loom-skin');
+const chapters = [...document.querySelectorAll('.chapter')];
+const names = ['01  THE ENCOUNTER','02  INTO THE UNKNOWN','03  THE THREADS CONNECT'];
+function sync(){
+ skin.classList.toggle('has-started', video.currentTime > 0 || !video.paused);
+ skin.classList.toggle('is-playing', !video.paused);
+ document.querySelector('.end-card').hidden = !video.ended;
+ const n = video.currentTime >= 36 ? 2 : video.currentTime >= 18 ? 1 : 0;
+ document.querySelector('#chapter-label').textContent = names[n];
+ chapters.forEach((b,i)=>{b.classList.toggle('active',i===n);b.setAttribute('aria-current',i===n?'true':'false')});
+}
+['timeupdate','play','pause','ended','loadedmetadata'].forEach(e=>video.addEventListener(e,sync));
+const loading = document.querySelector('.buffering');
+video.addEventListener('waiting',()=>{loading.hidden=false});
+['playing','canplay','error','pause'].forEach(e=>video.addEventListener(e,()=>{loading.hidden=true}));
+chapters.forEach(button=>button.addEventListener('click',()=>{video.currentTime=Number(button.dataset.time);video.play().catch(()=>{});sync()}));
+document.querySelectorAll('[data-theme]').forEach(button=>button.addEventListener('click',()=>{
+ skin.dataset.finish=button.dataset.theme;
+ document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+}));
+const dialog=document.querySelector('#shortcuts');
+document.querySelector('.shortcuts-trigger').addEventListener('click',()=>dialog.showModal());
+document.querySelector('#close-shortcuts').addEventListener('click',()=>dialog.close());
+dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close()}});
+dialog.addEventListener('keydown',e=>e.stopPropagation());
+document.querySelector('#theatre').addEventListener('click',e=>{const active=document.body.classList.toggle('wide');e.currentTarget.setAttribute('aria-pressed',String(active));e.currentTarget.innerHTML=active?'Standard view':'Wide view'});
+document.querySelector('#retry').addEventListener('click',()=>{video.load();video.play().catch(()=>{})});
+video.addEventListener('click',()=>video.paused?video.play().catch(()=>{}):video.pause());
+sync();
